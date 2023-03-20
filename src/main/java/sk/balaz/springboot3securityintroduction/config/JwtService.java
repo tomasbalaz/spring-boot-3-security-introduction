@@ -18,7 +18,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class JwtService {
 
-  private final String secretKey = "secret";
+  // https://www.allkeysgenerator.com/Random/Security-Encryption-Key-Generator.aspx
+  private static final String SECRET_KEY =
+      "67566B5970337336763979244226452948404D6351665468576D5A7134743777";
 
   public String extractUserName(String token) {
     return extractClaim(token, Claims::getSubject);
@@ -42,7 +44,6 @@ public class JwtService {
         .builder()
         .setClaims(extraClaims)
         .setSubject(userDetails.getUsername())
-        .claim("authorities", userDetails.getAuthorities())
         .setIssuedAt(
             Date.from(
                 LocalDateTime
@@ -88,7 +89,7 @@ public class JwtService {
   }
 
   private Key getSignInKey() {
-    byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+    byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
     return Keys.hmacShaKeyFor(keyBytes);
   }
 

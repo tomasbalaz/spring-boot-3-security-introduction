@@ -1,7 +1,5 @@
 package sk.balaz.springboot3securityintroduction.config;
 
-import java.util.Collections;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,15 +10,12 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import sk.balaz.springboot3securityintroduction.dao.UserDao;
 
 @EnableWebSecurity
 @Configuration
@@ -28,24 +23,14 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
-
-    private static final List<UserDetails> APPLICATION_USERS =
-        List.of(
-            new User(
-                "admin@email.com",
-                "password",
-                Collections.singleton( new SimpleGrantedAuthority("ROLE_ADMIN"))
-                ),
-            new User(
-                "user@email.com",
-                "password",
-                Collections.singleton( new SimpleGrantedAuthority("ROLE_USER"))
-            )
-        );
+    private final UserDao userDao;
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests()
+        http.csrf().disable()
+            .authorizeHttpRequests()
+            .requestMatchers("/api/v1/auth/**")
+            .permitAll()
             .anyRequest()
             .authenticated()
             .and()
@@ -78,9 +63,6 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        return email -> APPLICATION_USERS.stream()
-            .filter(userDetails -> userDetails.getUsername().equals(email))
-            .findFirst()
-            .orElseThrow(() -> new UsernameNotFoundException("No user was found"));
+        return userDao::findUserByEmail;
     }
 }
